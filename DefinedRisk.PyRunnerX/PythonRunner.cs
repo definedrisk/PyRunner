@@ -18,7 +18,7 @@ namespace DefinedRisk.PyRunnerX
 
     /// <summary>
     /// A specialized runner for python and python scripts. Supports textual output
-    /// as well as image output, both synchronously and asynchronously.
+    /// as well as image output (work in progress), both synchronously and asynchronously.
     /// </summary>
     /// <remarks>
     /// You can think of <see cref="PythonRunner"/> instances as <see cref="Process"/>
@@ -36,148 +36,118 @@ namespace DefinedRisk.PyRunnerX
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PythonRunner"/> class to be used for creating virtual
-        /// environments. Launcher (interpreter) is fixed for the lifetime of this instance.
-        /// It is either "c:\windows\py.exe" or "/usr/bin/python3" and is evaluated from OS
-        /// at runtime.
+        /// environments using default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
+        /// evaluated from OS (windows or linux) at runtime.
         /// </summary>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 30000 (30 sec).</param>
+        /// <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
         /// <exception cref="PythonRunnerException">
         /// Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
-        /// launcher or interpreter directly.
+        /// launcher (interpreter) directly.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Timeout should be greater than 0.
         /// </exception>
         /// <seealso cref="Timeout"/>
         public PythonRunner(
-            int timeout = 30000)
+            int timeout = 60000)
         {
+            if (timeout < 0)
+            {
+                throw new ArgumentOutOfRangeException($"Timeout should be greater than or equal to zero: {timeout}");
+            }
+
             var launcher = GetOSLauncher;
             if (!File.Exists(launcher))
             {
                 throw new PythonRunnerException($"Default launcher (interpreter) does not exist: {launcher}", new FileNotFoundException(launcher));
             }
 
-            Interpreter = GetOSLauncher;
-            Timeout = timeout;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PythonRunner"/> class.
-        /// Launcher (interpreter) is fixed for the lifetime of this instance.
-        /// It is either "c:\windows\py.exe" or "/usr/bin/python3" and is evaluated from OS
-        /// at runtime. Both sets of arguments can be changed throughout the lifetime of this class.
-        /// Note that for windows launcher usage is: "py [launcher-args] [python-args] script [script-args]".
-        /// </summary>
-        /// <param name="launcherArgs">Launcher specific arguments.</param>
-        /// <param name="interpreterArgs">Interpreter specific arguments.</param>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
-        /// <exception cref="PythonRunnerException">
-        /// Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
-        /// launcher or interpreter directly.
-        /// </exception>
-        /// <seealso cref="Interpreter"/>
-        /// <seealso cref="Timeout"/>
-        public PythonRunner(
-            string[] launcherArgs,
-            string[] interpreterArgs,
-            int timeout = 10000)
-        {
-            var launcher = GetOSLauncher;
-            if (!File.Exists(launcher))
-            {
-                throw new PythonRunnerException($"Default launcher (interpreter) does not exist: {launcher}", new FileNotFoundException(launcher));
-            }
-
-            LauncherArgs = launcherArgs;
-            InterpreterArgs = interpreterArgs;
-            Interpreter = GetOSLauncher;
-            Timeout = timeout;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PythonRunner"/> class.
-        /// Launcher (interpreter) is fixed for the lifetime of this instance.
-        /// It is either "c:\windows\py.exe" or "/usr/bin/python3" and is evaluated from OS
-        /// at runtime. Launcher-args are ommitted however both sets of arguments can be changed throughout
-        /// the lifetime of this class.
-        /// Note that for windows launcher usage is: "py [launcher-args] [python-args] script [script-args]".
-        /// </summary>
-        /// <param name="interpreterArgs">Interpreter specific arguments.</param>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
-        /// <exception cref="PythonRunnerException">
-        /// Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
-        /// launcher or interpreter directly.
-        /// </exception>
-        /// <seealso cref="Interpreter"/>
-        /// <seealso cref="Timeout"/>
-        public PythonRunner(
-            string[] interpreterArgs,
-            int timeout = 10000)
-        {
-            var launcher = GetOSLauncher;
-            if (!File.Exists(launcher))
-            {
-                throw new PythonRunnerException($"Default launcher (interpreter) does not exist: {launcher}", new FileNotFoundException(launcher));
-            }
-
-            LauncherArgs = Array.Empty<string>();
-            InterpreterArgs = interpreterArgs;
-            Interpreter = GetOSLauncher;
-            Timeout = timeout;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PythonRunner"/> class.
-        /// Launcher is fixed for the lifetime of this instance. Arguments can be changed.
-        /// </summary>
-        /// <param name="launcherArgs">Launcher specific arguments.</param>
-        /// <param name="interpreterArgs">Interpreter specific arguments.</param>
-        /// <param name="launcher">Full path to the Python launcher (interpreter).</param>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
-        /// <exception cref="PythonRunnerException">
-        /// Argument <paramref name="launcher"/> is an invalid path.
-        /// </exception>
-        /// <seealso cref="Interpreter"/>
-        /// <seealso cref="Timeout"/>
-        public PythonRunner(
-            string[] launcherArgs,
-            string[] interpreterArgs,
-            string launcher,
-            int timeout = 10000)
-        {
-            if (!File.Exists(launcher))
-            {
-                throw new PythonRunnerException($"Invalid launcher (interpreter) path: {launcher}", new FileNotFoundException(launcher));
-            }
-
-            LauncherArgs = launcherArgs;
-            InterpreterArgs = interpreterArgs;
             Interpreter = launcher;
             Timeout = timeout;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PythonRunner"/> class.
-        /// Interpreter is fixed for the lifetime of this instance. Arguments can be changed.
+        /// Interpreter (launcher) is fixed for the lifetime of this instance. Arguments can be changed.
         /// </summary>
-        /// <param name="interpreterArgs">Interpreter specific arguments.</param>
-        /// <param name="interpreter">Path to the Python interpreter.</param>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
-        /// <exception cref="FileNotFoundException">
+        /// <param name="interpreter">Path to the Python interpreter (launcher).</param>
+        /// <param name="interpreterArgs">Optional interpreter specific arguments.</param>
+        /// <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+        /// <exception cref="PythonRunnerException">
         /// Argument <paramref name="interpreter"/> is an invalid path.
         /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Timeout should be greater than 0.
+        /// </exception>
+        /// <seealso cref="Interpreter"/>
+        /// <seealso cref="InterpreterArgs"/>
+        /// <seealso cref="Timeout"/>
+        public PythonRunner(
+            string interpreter,
+            string[] interpreterArgs = null,
+            int timeout = 60000)
+        {
+            if (timeout < 0)
+            {
+                throw new ArgumentOutOfRangeException($"Timeout should be greater than or equal to zero: {timeout}");
+            }
+
+            if (!File.Exists(interpreter))
+            {
+                throw new PythonRunnerException($"Invalid path: {interpreter}", new FileNotFoundException(interpreter));
+            }
+
+            Interpreter = interpreter;
+            InterpreterArgs = interpreterArgs ?? Array.Empty<string>();
+            Timeout = timeout;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PythonRunner"/> class. The optional parameter
+        /// <c>launcher</c> (interpreter) is fixed for the lifetime of this instance and
+        /// defaults to either <c>c:\windows\py.exe</c> or <c>/usr/bin/python3</c> (evaluated from OS
+        /// at runtime). Both sets of arguments can be changed throughout the lifetime of this class.
+        /// Note that for windows launcher usage is "<c>py [launcher-args] [python-args] script [script-args]</c>".
+        /// When calling this function on Ubuntu Linux the args will effectively be chained together so it would
+        /// make more sense to call the constructor with a single set of <c>interpreterArgs</c> in that case.
+        /// </summary>
+        /// <param name="launcherArgs">Launcher specific arguments.</param>
+        /// <param name="interpreterArgs">Optional interpreter specific arguments.</param>
+        /// <param name="launcher">Optional full path to the Python launcher (interpreter). Othwerwise
+        /// uses the default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
+        /// evaluated from OS (windows or linux) at runtime.</param>
+        /// <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+        /// <exception cref="PythonRunnerException">
+        /// Launcher (interpreter) <paramref name="launcher"/> is an invalid path.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Timeout should be greater than 0.
+        /// </exception>
+        /// <seealso cref="LauncherArgs"/>
+        /// <seealso cref="InterpreterArgs"/>
         /// <seealso cref="Interpreter"/>
         /// <seealso cref="Timeout"/>
         public PythonRunner(
-            string[] interpreterArgs,
-            string interpreter,
-            int timeout = 10000)
+            string[] launcherArgs,
+            string[] interpreterArgs = null,
+            string launcher = null,
+            int timeout = 60000)
         {
-            if (!File.Exists(interpreter))
+            if (timeout < 0)
             {
-                throw new PythonRunnerException($"Invalid interpreter path: {interpreter}", new FileNotFoundException(interpreter));
+                throw new ArgumentOutOfRangeException($"Timeout should be greater than or equal to zero: {timeout}");
             }
 
-            InterpreterArgs = interpreterArgs;
-            Interpreter = interpreter;
+            launcher ??= GetOSLauncher;
+
+            if (!File.Exists(launcher))
+            {
+                throw new PythonRunnerException($"Default launcher (interpreter) does not exist: {launcher}", new FileNotFoundException(launcher));
+            }
+
+            LauncherArgs = launcherArgs;
+            InterpreterArgs = interpreterArgs ?? Array.Empty<string>();
+            Interpreter = launcher;
             Timeout = timeout;
         }
 
@@ -202,13 +172,14 @@ namespace DefinedRisk.PyRunnerX
         public event EventHandler<PyRunnerExitedEventArgs> Exited;
 
         /// <summary>
-        /// Gets the full path to Python launcher or interpreter (eg. 'py.exe' or 'python3') for use by this instance.
+        /// Gets the full path to the underlying Python launcher or interpreter (eg. 'py.exe' or 'python3')
+        /// for use by this instance (set during construction and cannot be changed).
         /// </summary>
         public string Interpreter { get; }
 
         /// <summary>
         /// Gets or sets the Python launcher args for use by this instance. See 'py --help'
-        /// for available launcher args.
+        /// for available launcher args. Not strictly necessary to Ubuntu linux.
         /// </summary>
         public string[] LauncherArgs { get; set; } = new string[0];
 
@@ -226,6 +197,9 @@ namespace DefinedRisk.PyRunnerX
         /// </remarks>
         public int Timeout { get; set; }
 
+        /// <summary>
+        /// Gets the default operating system launcher (interpreter).
+        /// </summary>
         private static string GetOSLauncher
         {
             get
@@ -245,6 +219,9 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
+        /// <summary>
+        /// Gets the virtual environment folder i.e. <c>./base-directory/.venv</c>.
+        /// </summary>
         private static string EnvPath
         {
             get
@@ -325,6 +302,7 @@ namespace DefinedRisk.PyRunnerX
         /// <summary>
         /// Executes a Python script and returns the resulting image (mostly a chart that was produced
         /// by a Python package like e.g. <see href="https://matplotlib.org/">matplotlib</see>).
+        /// \TEST Image conversion functionality.
         /// </summary>
         /// <param name="script">Full path to the script to execute.</param>
         /// <param name="scriptArguments">Arguments that were passed to the script.</param>
@@ -399,15 +377,22 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
-        public PythonRunner CreateVirtualEnv(string requirements)
+        /// <summary>
+        /// Use the exisiting interpreter (launcher) to create a virtual environment in the base-directory if
+        /// it does not already exist. Then retrun a new <see cref="PythonRunner"/> with interpreter setup
+        /// to use this virtual environment.
+        /// Note: on Debian/Ubuntu systems, you need to install the python3-venv package before this can
+        /// be used (sudo apt install python3.8-venv). On Windows 10 use the default installer provided
+        /// from python.org to ensure venv module is available.
+        /// </summary>
+        /// <param name="requirements">Optional path to <c>requirements.txt</c> file.</param>
+        /// <returns>A python runner with interpreter setup to use the virtual environment.</returns>
+        public PythonRunner CreateVirtualEnv(string requirements = null)
         {
-            // Check for existance of venv and create if not. Note: on Debian/Ubuntu systems, you need to
-            // install the python3-venv package using the following command: apt install python3.8-venv
-            // You may need to use sudo with that command. After installing the python3-venv package, recreate your virtual environment.
-            // On Windows 10 use the default installer provided from python.org.
+            // Check for existance of venv and create if not
             if (!File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
             {
-                // create virtual environment
+                // create a new virtual environment using exisiting interpreter
                 var startInfo = new ProcessStartInfo(Interpreter)
                 {
                     UseShellExecute = false,
@@ -423,19 +408,34 @@ namespace DefinedRisk.PyRunnerX
                 }
 
                 InternalRun(startInfo);
+            }
 
-                // install packages
+            // install requirements.txt
+            if (requirements != null)
+            {
+                string program;
+
                 if (OperatingSystem.IsLinux())
                 {
-                    startInfo.FileName = Path.Combine(EnvPath, "bin", "pip");
+                    program = Path.Combine(EnvPath, "bin", "pip");
                 }
                 else if (OperatingSystem.IsWindows())
                 {
-                    startInfo.FileName = Path.Combine(EnvPath, "Scripts", "pip");
+                    program = Path.Combine(EnvPath, "Scripts", "pip");
+                }
+                else
+                {
+                    program = string.Empty;
                 }
 
-                startInfo.ArgumentList.Clear();
-                args = new string[] { "install", "-r", requirements };
+                var startInfo = new ProcessStartInfo(program)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                var args = new string[] { "install", "-r", requirements };
                 foreach (var arg in args)
                 {
                     startInfo.ArgumentList.Add(arg);
@@ -444,15 +444,19 @@ namespace DefinedRisk.PyRunnerX
                 InternalRun(startInfo);
             }
 
-            PythonRunner runner = null;
+            PythonRunner runner;
 
             if (OperatingSystem.IsLinux())
             {
-                runner = new PythonRunner(Array.Empty<string>(), Path.Combine(EnvPath, "bin", "python3"));
+                runner = new PythonRunner(Path.Combine(EnvPath, "bin", "python3"));
             }
             else if (OperatingSystem.IsWindows())
             {
-                runner = new PythonRunner(Array.Empty<string>(), Path.Combine(EnvPath, "Scripts", "python.exe"));
+                runner = new PythonRunner(Path.Combine(EnvPath, "Scripts", "python.exe"));
+            }
+            else
+            {
+                runner = null;
             }
 
             return runner;

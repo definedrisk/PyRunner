@@ -24,14 +24,14 @@ namespace DefinedRisk.PyRunnerX
             // First one is 'b' (python format sign), others are quote signs.
             string base64String = pythonBase64String.Substring(2, pythonBase64String.Length - 3);
 
-            // Convert now raw base46 string to byte array.
+            // Convert now raw base64 string to byte array.
             byte[] imageBytes = Convert.FromBase64String(base64String);
 
             ////// Read bytes as stream.
             ////var memoryStream = new MemoryStream(imageBytes, 0, imageBytes.Length);
             ////memoryStream.Write(imageBytes, 0, imageBytes.Length);
 
-            // Create bitmap from stream.
+            // Create image from stream.
             return Image.Load(imageBytes);
         }
     }

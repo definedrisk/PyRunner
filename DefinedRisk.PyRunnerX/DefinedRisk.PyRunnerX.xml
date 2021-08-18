@@ -18,7 +18,7 @@
         <member name="T:DefinedRisk.PyRunnerX.PythonRunner">
             <summary>
             A specialized runner for python and python scripts. Supports textual output
-            as well as image output, both synchronously and asynchronously.
+            as well as image output (work in progress), both synchronously and asynchronously.
             </summary>
             <remarks>
             You can think of <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> instances as <see cref="T:System.Diagnostics.Process"/>
@@ -30,79 +30,61 @@
         <member name="M:DefinedRisk.PyRunnerX.PythonRunner.#ctor(System.Int32)">
             <summary>
             Initializes a new instance of the <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> class to be used for creating virtual
-            environments. Launcher (interpreter) is fixed for the lifetime of this instance.
-            It is either "c:\windows\py.exe" or "/usr/bin/python3" and is evaluated from OS
-            at runtime.
+            environments using default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
+            evaluated from OS (windows or linux) at runtime.
             </summary>
-            <param name="timeout">Optional script timeout in msec. Defaults to 30000 (30 sec).</param>
+            <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
             <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
-            launcher or interpreter directly.
+            launcher (interpreter) directly.
+            </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            Timeout should be greater than 0.
             </exception>
             <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Timeout"/>
         </member>
-        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.#ctor(System.String[],System.String[],System.Int32)">
+        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.#ctor(System.String,System.String[],System.Int32)">
             <summary>
             Initializes a new instance of the <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> class.
-            Launcher (interpreter) is fixed for the lifetime of this instance.
-            It is either "c:\windows\py.exe" or "/usr/bin/python3" and is evaluated from OS
-            at runtime. Both sets of arguments can be changed throughout the lifetime of this class.
-            Note that for windows launcher usage is: "py [launcher-args] [python-args] script [script-args]".
+            Interpreter (launcher) is fixed for the lifetime of this instance. Arguments can be changed.
             </summary>
-            <param name="launcherArgs">Launcher specific arguments.</param>
-            <param name="interpreterArgs">Interpreter specific arguments.</param>
-            <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
+            <param name="interpreter">Path to the Python interpreter (launcher).</param>
+            <param name="interpreterArgs">Optional interpreter specific arguments.</param>
+            <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
             <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
-            Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
-            launcher or interpreter directly.
+            Argument <paramref name="interpreter"/> is an invalid path.
+            </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            Timeout should be greater than 0.
             </exception>
             <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Interpreter"/>
-            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Timeout"/>
-        </member>
-        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.#ctor(System.String[],System.Int32)">
-            <summary>
-            Initializes a new instance of the <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> class.
-            Launcher (interpreter) is fixed for the lifetime of this instance.
-            It is either "c:\windows\py.exe" or "/usr/bin/python3" and is evaluated from OS
-            at runtime. Launcher-args are ommitted however both sets of arguments can be changed throughout
-            the lifetime of this class.
-            Note that for windows launcher usage is: "py [launcher-args] [python-args] script [script-args]".
-            </summary>
-            <param name="interpreterArgs">Interpreter specific arguments.</param>
-            <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
-            <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
-            Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
-            launcher or interpreter directly.
-            </exception>
-            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Interpreter"/>
+            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.InterpreterArgs"/>
             <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Timeout"/>
         </member>
         <member name="M:DefinedRisk.PyRunnerX.PythonRunner.#ctor(System.String[],System.String[],System.String,System.Int32)">
             <summary>
-            Initializes a new instance of the <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> class.
-            Launcher is fixed for the lifetime of this instance. Arguments can be changed.
+            Initializes a new instance of the <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> class. The optional parameter
+            <c>launcher</c> (interpreter) is fixed for the lifetime of this instance and
+            defaults to either <c>c:\windows\py.exe</c> or <c>/usr/bin/python3</c> (evaluated from OS
+            at runtime). Both sets of arguments can be changed throughout the lifetime of this class.
+            Note that for windows launcher usage is "<c>py [launcher-args] [python-args] script [script-args]</c>".
+            When calling this function on Ubuntu Linux the args will effectively be chained together so it would
+            make more sense to call the constructor with a single set of <c>interpreterArgs</c> in that case.
             </summary>
             <param name="launcherArgs">Launcher specific arguments.</param>
-            <param name="interpreterArgs">Interpreter specific arguments.</param>
-            <param name="launcher">Full path to the Python launcher (interpreter).</param>
-            <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
+            <param name="interpreterArgs">Optional interpreter specific arguments.</param>
+            <param name="launcher">Optional full path to the Python launcher (interpreter). Othwerwise
+            uses the default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
+            evaluated from OS (windows or linux) at runtime.</param>
+            <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
             <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
-            Argument <paramref name="launcher"/> is an invalid path.
+            Launcher (interpreter) <paramref name="launcher"/> is an invalid path.
             </exception>
-            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Interpreter"/>
-            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Timeout"/>
-        </member>
-        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.#ctor(System.String[],System.String,System.Int32)">
-            <summary>
-            Initializes a new instance of the <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> class.
-            Interpreter is fixed for the lifetime of this instance. Arguments can be changed.
-            </summary>
-            <param name="interpreterArgs">Interpreter specific arguments.</param>
-            <param name="interpreter">Path to the Python interpreter.</param>
-            <param name="timeout">Optional script timeout in msec. Defaults to 10000 (10 sec).</param>
-            <exception cref="T:System.IO.FileNotFoundException">
-            Argument <paramref name="interpreter"/> is an invalid path.
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            Timeout should be greater than 0.
             </exception>
+            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.LauncherArgs"/>
+            <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.InterpreterArgs"/>
             <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Interpreter"/>
             <seealso cref="P:DefinedRisk.PyRunnerX.PythonRunner.Timeout"/>
         </member>
@@ -120,13 +102,14 @@
         </member>
         <member name="P:DefinedRisk.PyRunnerX.PythonRunner.Interpreter">
             <summary>
-            Gets the full path to Python launcher or interpreter (eg. 'py.exe' or 'python3') for use by this instance.
+            Gets the full path to the underlying Python launcher or interpreter (eg. 'py.exe' or 'python3')
+            for use by this instance (set during construction and cannot be changed).
             </summary>
         </member>
         <member name="P:DefinedRisk.PyRunnerX.PythonRunner.LauncherArgs">
             <summary>
             Gets or sets the Python launcher args for use by this instance. See 'py --help'
-            for available launcher args.
+            for available launcher args. Not strictly necessary to Ubuntu linux.
             </summary>
         </member>
         <member name="P:DefinedRisk.PyRunnerX.PythonRunner.InterpreterArgs">
@@ -142,6 +125,16 @@
             <remarks>
             See <see cref="M:System.Diagnostics.Process.WaitForExit(System.Int32)"/> for details about this value.
             </remarks>
+        </member>
+        <member name="P:DefinedRisk.PyRunnerX.PythonRunner.GetOSLauncher">
+            <summary>
+            Gets the default operating system launcher (interpreter).
+            </summary>
+        </member>
+        <member name="P:DefinedRisk.PyRunnerX.PythonRunner.EnvPath">
+            <summary>
+            Gets the virtual environment folder i.e. <c>./base-directory/.venv</c>.
+            </summary>
         </member>
         <member name="M:DefinedRisk.PyRunnerX.PythonRunner.Execute(System.String,System.Object[])">
             <summary>
@@ -195,6 +188,7 @@
              <summary>
              Executes a Python script and returns the resulting image (mostly a chart that was produced
              by a Python package like e.g. <see href="https://matplotlib.org/">matplotlib</see>).
+             \TEST Image conversion functionality.
              </summary>
              <param name="script">Full path to the script to execute.</param>
              <param name="scriptArguments">Arguments that were passed to the script.</param>
@@ -245,6 +239,18 @@
              including the following statement: <c>warnings.simplefilter("ignore")</c>.
              </para>
              </remarks>
+        </member>
+        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.CreateVirtualEnv(System.String)">
+            <summary>
+            Use the exisiting interpreter (launcher) to create a virtual environment in the base-directory if
+            it does not already exist. Then retrun a new <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> with interpreter setup
+            to use this virtual environment.
+            Note: on Debian/Ubuntu systems, you need to install the python3-venv package before this can
+            be used (sudo apt install python3.8-venv). On Windows 10 use the default installer provided
+            from python.org to ensure venv module is available.
+            </summary>
+            <param name="requirements">Optional path to <c>requirements.txt</c> file.</param>
+            <returns>A python runner with interpreter setup to use the virtual environment.</returns>
         </member>
         <member name="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             <summary>

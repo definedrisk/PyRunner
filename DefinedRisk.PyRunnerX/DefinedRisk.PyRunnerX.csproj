@@ -17,12 +17,12 @@
     <AnalysisLevel>5.0</AnalysisLevel>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>GetImage functionality not yet implemented. Expect frequent changes to this -alpha release. Constructive comments, suggestions and feedback welcome.</PackageReleaseNotes>
-    <Version>1.0.5-alpha</Version>
+    <Version>1.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>python script runner</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.5.0</FileVersion>
+    <FileVersion>1.1.0.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
