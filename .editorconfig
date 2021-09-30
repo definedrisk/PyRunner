@@ -144,7 +144,7 @@ csharp_prefer_simple_using_statement=false:suggestion
 dotnet_diagnostic.SA1101.severity = silent
 # SA1309: A field name in C# begins with an underscore
 dotnet_diagnostic.SA1309.severity = none
-# CS1591: Missing XML comment for publicly visible type or member 'PyRunnerExitedEventArgs'
+# CS1591: Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = none
 # SA1413: Use trailing comma in multi-line initializers
 dotnet_diagnostic.SA1413.severity = none

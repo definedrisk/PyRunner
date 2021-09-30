@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DefinedRisk.PyRunnerX.ExampleUsage": {
+      "commandName": "Project",
+      "commandLineArgs": "\"Title 1\" 6 \"Title 2\" 16"
+    }
+  }
+}

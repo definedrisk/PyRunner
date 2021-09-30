@@ -179,7 +179,7 @@ namespace DefinedRisk.PyRunnerX
 
         /// <summary>
         /// Gets or sets the Python launcher args for use by this instance. See 'py --help'
-        /// for available launcher args. Not strictly necessary to Ubuntu linux.
+        /// for available launcher args. Not strictly necessary for Ubuntu linux.
         /// </summary>
         public string[] LauncherArgs { get; set; } = new string[0];
 
@@ -198,7 +198,7 @@ namespace DefinedRisk.PyRunnerX
         public int Timeout { get; set; }
 
         /// <summary>
-        /// Gets the default operating system launcher (interpreter).
+        /// Gets the default operating system launcher (interpreter) full path.
         /// </summary>
         private static string GetOSLauncher
         {
@@ -248,7 +248,7 @@ namespace DefinedRisk.PyRunnerX
         /// <remarks>
         /// <b>Important:</b> Output to the error stream can also come from warnings, that are frequently
         /// outputted by various python package components. These warnings would result
-        /// in an exception, therefore they must be switched off within the script by
+        /// in an exception, therefore they should be switched off within the script by
         /// including the following statement: <c>warnings.simplefilter("ignore")</c>.
         /// </remarks>
         public string Execute(string script, params object[] scriptArguments)
@@ -272,6 +272,7 @@ namespace DefinedRisk.PyRunnerX
         /// <seealso cref="Execute"/>
         public Task<string> ExecuteAsync(string script, CancellationToken ct, params object[] scriptArguments)
         {
+            // cancellation token will only prevent execution if not already started
             return Task.Run<string>(() => Execute(script, scriptArguments), ct);
         }
 
@@ -379,12 +380,13 @@ namespace DefinedRisk.PyRunnerX
 
         /// <summary>
         /// Use the exisiting interpreter (launcher) to create a virtual environment in the base-directory if
-        /// it does not already exist. Then retrun a new <see cref="PythonRunner"/> with interpreter setup
+        /// it does not already exist. Then return a new <see cref="PythonRunner"/> with interpreter setup
         /// to use this virtual environment.
         /// Note: on Debian/Ubuntu systems, you need to install the python3-venv package before this can
         /// be used (sudo apt install python3.8-venv). On Windows 10 use the default installer provided
-        /// from python.org to ensure venv module is available.
+        /// from python.org to ensure the venv module is available for use by this function.
         /// </summary>
+        /// <seealso aref="https://docs.python.org/3/tutorial/venv.html"/>
         /// <param name="requirements">Optional path to <c>requirements.txt</c> file.</param>
         /// <returns>A python runner with interpreter setup to use the virtual environment.</returns>
         public PythonRunner CreateVirtualEnv(string requirements = null)
@@ -392,6 +394,9 @@ namespace DefinedRisk.PyRunnerX
             // Check for existance of venv and create if not
             if (!File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
             {
+                Debug.WriteLine("Creating virtual environment:");
+                Debug.WriteLine(EnvPath);
+
                 // create a new virtual environment using exisiting interpreter
                 var startInfo = new ProcessStartInfo(Interpreter)
                 {
@@ -413,6 +418,9 @@ namespace DefinedRisk.PyRunnerX
             // install requirements.txt
             if (requirements != null)
             {
+                Debug.WriteLine("Installing Requirements:");
+                Debug.WriteLine(requirements);
+
                 string program;
 
                 if (OperatingSystem.IsLinux())
@@ -528,6 +536,7 @@ namespace DefinedRisk.PyRunnerX
                 {
                     process.Kill();
                     process.WaitForExit();
+                    _outputBuilder.Append("PYRUNNER TIMEOUT\n");
                     OnExited(process.ExitCode, process.ExitTime);
                 }
                 catch (Exception exception)
@@ -599,6 +608,9 @@ namespace DefinedRisk.PyRunnerX
         private void OnExited(int exitCode, DateTime exitTime) =>
             Exited?.Invoke(this, new PyRunnerExitedEventArgs(exitCode, exitTime));
 
+        /// <summary>
+        ///  Basic wrapper can be used to identify OS. Functionality may be increased in future.
+        /// </summary>
         public static class OperatingSystem
         {
             public static bool IsWindows() =>

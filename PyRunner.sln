@@ -9,8 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DefinedRisk.PyRunnerX", "De
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{82BDAD2F-5D05-42F8-84C5-8E677B900355}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		README.md = README.md
+		stylecop.json = stylecop.json
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DefinedRisk.PyRunnerX.ExampleUsage", "DefinedRisk.PyRunnerX.ExampleUsage\DefinedRisk.PyRunnerX.ExampleUsage.csproj", "{02F6D563-3167-4017-AEA5-9CE069810188}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +28,10 @@ Global
 		{16353260-F906-4167-ABBD-DB69932BC0EA}.Debug|x64.Build.0 = Debug|x64
 		{16353260-F906-4167-ABBD-DB69932BC0EA}.Release|x64.ActiveCfg = Release|x64
 		{16353260-F906-4167-ABBD-DB69932BC0EA}.Release|x64.Build.0 = Release|x64
+		{02F6D563-3167-4017-AEA5-9CE069810188}.Debug|x64.ActiveCfg = Debug|x64
+		{02F6D563-3167-4017-AEA5-9CE069810188}.Debug|x64.Build.0 = Debug|x64
+		{02F6D563-3167-4017-AEA5-9CE069810188}.Release|x64.ActiveCfg = Release|x64
+		{02F6D563-3167-4017-AEA5-9CE069810188}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

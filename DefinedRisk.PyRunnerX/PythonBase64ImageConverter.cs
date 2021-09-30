@@ -22,7 +22,7 @@ namespace DefinedRisk.PyRunnerX
         {
             // Remove the first two chars and the last one.
             // First one is 'b' (python format sign), others are quote signs.
-            string base64String = pythonBase64String.Substring(2, pythonBase64String.Length - 3);
+            string base64String = pythonBase64String[2..^1];
 
             // Convert now raw base64 string to byte array.
             byte[] imageBytes = Convert.FromBase64String(base64String);
