@@ -26,7 +26,7 @@ namespace DefinedRisk.PyRunnerX
     /// (and launcher for windows) can also be called directly without appending scipts.
     /// </remarks>
     /// <seealso cref="Process"/>
-    public sealed class PythonRunner
+    public sealed class PythonRunner : IPyRunnerX
     {
         // collects output from process std_output during latest run
         private StringBuilder _outputBuilder;
@@ -177,29 +177,13 @@ namespace DefinedRisk.PyRunnerX
         /// </summary>
         public string Interpreter { get; }
 
-        /// <summary>
-        /// Gets or sets the Python launcher args for use by this instance. See 'py --help'
-        /// for available launcher args. Not strictly necessary for Ubuntu linux.
-        /// </summary>
         public string[] LauncherArgs { get; set; } = new string[0];
 
-        /// <summary>
-        /// Gets or sets the Python interpreter args for use by this instance. See 'python3 --help'
-        /// for available interpreter args.
-        /// </summary>
         public string[] InterpreterArgs { get; set; } = new string[0];
 
-        /// <summary>
-        /// Gets or Sets the timeout for the underlying <see cref="Process"/> component in msec.
-        /// </summary>
-        /// <remarks>
-        /// See <see cref="Process.WaitForExit(int)"/> for details about this value.
-        /// </remarks>
         public int Timeout { get; set; }
 
-        /// <summary>
-        /// Gets the default operating system launcher (interpreter) full path.
-        /// </summary>
+        // Gets the default operating system launcher (interpreter) full path.
         private static string GetOSLauncher
         {
             get
@@ -219,9 +203,7 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
-        /// <summary>
-        /// Gets the virtual environment folder i.e. <c>./base-directory/.venv</c>.
-        /// </summary>
+        // Gets the virtual environment folder i.e. <c>./base-directory/.venv</c>.
         private static string EnvPath
         {
             get
@@ -230,27 +212,6 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
-        /// <summary>
-        /// Execute a Python script and return text that would have been printed
-        /// to console.
-        /// </summary>
-        /// <param name="script">Full path to script file.</param>
-        /// <param name="scriptArguments">Arguments to pass to script.</param>
-        /// <returns>The text output of the script (re-directed from Stdout).</returns>
-        /// <exception cref="PythonRunnerException">
-        /// Thrown if error text was outputted by the script (this normally happens
-        /// if an exception was raised by the script). <br/>
-        /// -- or -- <br/>
-        /// An unexpected error happened during script execution. In this case, the
-        /// <see cref="Exception.InnerException"/> property contains the original
-        /// <see cref="Exception"/>.
-        /// </exception>
-        /// <remarks>
-        /// <b>Important:</b> Output to the error stream can also come from warnings, that are frequently
-        /// outputted by various python package components. These warnings would result
-        /// in an exception, therefore they should be switched off within the script by
-        /// including the following statement: <c>warnings.simplefilter("ignore")</c>.
-        /// </remarks>
         public string Execute(string script, params object[] scriptArguments)
         {
             InternalExecute(script, scriptArguments);
@@ -260,27 +221,12 @@ namespace DefinedRisk.PyRunnerX
                 : _outputBuilder.ToString().Trim();
         }
 
-        /// <summary>
-        /// Runs the <see cref="Execute"/> method asynchronously using a <see cref="CancellationToken"/>.
-        /// </summary>
-        /// <param name="script">Full path to script file.</param>
-        /// <param name="ct">Task cancellation token.</param>
-        /// <param name="scriptArguments">Arguments to pass to script.</param>
-        /// <returns>
-        /// An awaitable task, with the text output of the script as <see cref="Task{TResult}.Result"/>.
-        /// </returns>
-        /// <seealso cref="Execute"/>
         public Task<string> ExecuteAsync(string script, CancellationToken ct, params object[] scriptArguments)
         {
             // cancellation token will only prevent execution if not already started
             return Task.Run<string>(() => Execute(script, scriptArguments), ct);
         }
 
-        /// <summary>
-        /// Run the Launcher or Interpreter with arguments (without Python Script).
-        /// Use this to setup environments for example.
-        /// </summary>
-        /// <returns>The text output (re-directed from Stdout).</returns>
         public string Run()
         {
             ProcessStartInfo startInfo = CreateStartInfo();
@@ -291,69 +237,11 @@ namespace DefinedRisk.PyRunnerX
                  : _outputBuilder.ToString().Trim();
         }
 
-        /// <summary>
-        /// Runs the <see cref="Run"/> method asynchronously using a <see cref="CancellationToken"/>.
-        /// </summary>
-        /// <returns>The text output (re-directed from Stdout).</returns>
         public Task<string> RunAsync(CancellationToken ct)
         {
             return Task.Run<string>(() => Run(), ct);
         }
 
-        /// <summary>
-        /// Executes a Python script and returns the resulting image (mostly a chart that was produced
-        /// by a Python package like e.g. <see href="https://matplotlib.org/">matplotlib</see>).
-        /// \TEST Image conversion functionality.
-        /// </summary>
-        /// <param name="script">Full path to the script to execute.</param>
-        /// <param name="scriptArguments">Arguments that were passed to the script.</param>
-        /// <returns>The <see cref="Image"/> that the script creates.</returns>
-        /// <exception cref="PythonRunnerException">
-        /// Thrown if error text was outputted by the script (this normally happens
-        /// if an exception was raised by the script). <br/>
-        /// -- or -- <br/>
-        /// An unexpected error happened during script execution. In this case, the
-        /// <see cref="Exception.InnerException"/> property contains the original
-        /// <see cref="Exception"/>.
-        /// </exception>
-        /// <exception cref="ArgumentNullException">
-        /// Argument <paramref name="script"/> is null.
-        /// </exception>
-        /// <exception cref="FileNotFoundException">
-        /// Argument <paramref name="script"/> is an invalid path.
-        /// </exception>
-        /// <remarks>
-        /// <para>
-        /// In a 'normal' case, a Python script that creates a chart would show this chart
-        /// with the help of Python's own backend, like this.
-        /// <example>
-        /// import matplotlib.pyplot as plt
-        /// ...
-        /// plt.show()
-        /// </example>
-        /// For the script to be used within the context of this <see cref="PythonRunner"/>,
-        /// it should instead convert the image to a base64-encoded string and print this string
-        /// to the console. The following code snippet shows a Python method (<c>print_figure</c>)
-        /// that does this:
-        /// <example>
-        /// import io, sys, base64
-        ///
-        /// def print_figure(fig):
-        ///   buf = io.BytesIO()
-        ///   fig.savefig(buf, format='png')
-        ///   print(base64.b64encode(buf.getbuffer()))
-        ///
-        /// import matplotlib.pyplot as plt
-        /// ...
-        /// print_figure(plt.gcf()) # the gcf() method retrieves the current figure
-        /// </example>
-        /// </para><para>
-        /// <b>Important:</b> Output to the error stream can also come from warnings, that are frequently
-        /// outputted by various python package components. These warnings would result
-        /// in an exception, therefore they must be switched off within the script by
-        /// including the following statement: <c>warnings.simplefilter("ignore")</c>.
-        /// </para>
-        /// </remarks>
         public Image GetImage(string script, params object[] scriptArguments)
         {
             InternalExecute(script, scriptArguments);
@@ -378,17 +266,6 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
-        /// <summary>
-        /// Use the exisiting interpreter (launcher) to create a virtual environment in the base-directory if
-        /// it does not already exist. Then return a new <see cref="PythonRunner"/> with interpreter setup
-        /// to use this virtual environment.
-        /// Note: on Debian/Ubuntu systems, you need to install the python3-venv package before this can
-        /// be used (sudo apt install python3.8-venv). On Windows 10 use the default installer provided
-        /// from python.org to ensure the venv module is available for use by this function.
-        /// </summary>
-        /// <seealso aref="https://docs.python.org/3/tutorial/venv.html"/>
-        /// <param name="requirements">Optional path to <c>requirements.txt</c> file.</param>
-        /// <returns>A python runner with interpreter setup to use the virtual environment.</returns>
         public PythonRunner CreateVirtualEnv(string requirements = null)
         {
             // Check for existance of venv and create if not
@@ -609,7 +486,7 @@ namespace DefinedRisk.PyRunnerX
             Exited?.Invoke(this, new PyRunnerExitedEventArgs(exitCode, exitTime));
 
         /// <summary>
-        ///  Basic wrapper can be used to identify OS. Functionality may be increased in future.
+        ///  Simple wrapper can be used to identify OS. Functionality may be increased in future.
         /// </summary>
         public static class OperatingSystem
         {
