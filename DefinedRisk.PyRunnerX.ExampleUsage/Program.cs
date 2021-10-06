@@ -16,6 +16,12 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
   {
         public static void Main(string[] args)
         {
+            // starts scripts immediately - asynchronously
+            // cancellation by token does not currently propagate to tasks once started
+            // but would prevent tasks starting if token is already in cancelled state
+            // when tasks are created
+            var cts = new CancellationTokenSource();
+
             // show OS type
             Console.WriteLine("IsWindows(): " + PythonRunner.OperatingSystem.IsWindows());
             Console.WriteLine("IsLinux(): " + PythonRunner.OperatingSystem.IsLinux());
@@ -24,7 +30,7 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
             PythonRunner runnerGlobal = new PythonRunner();
 
             // use it to create a virtual environment in local directory (or just return if one already exists)
-            PythonRunner runnerVirtual = runnerGlobal.CreateVirtualEnv(Path.Combine(AppContext.BaseDirectory, "Python", "requirements.txt"));
+            PythonRunner runnerVirtual = runnerGlobal.CreateVirtualEnvAsync(cts.Token, Path.Combine(AppContext.BaseDirectory, "Python", "requirements.txt")).Result;
 
             // these copies of runner will use this same virtual environment
             var runner1 = new PythonRunner(runnerVirtual);
@@ -35,23 +41,20 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
             if (PythonRunner.OperatingSystem.IsWindows())
             {
                 // set launcher-args
-                runner1.LauncherArgs = new string[] { "-3.7-64" };
                 runner1.Timeout = 10000; // 10 seconds
 
-                runner2.LauncherArgs = new string[] { "-3.7-64" };
                 runner2.Timeout = 20000; // 20 seconds
 
-                runner3.LauncherArgs = new string[] { "-3.7-64" };
-                runner3.Timeout = 5000; // 4 seconds!!
+                runner3.Timeout = 5000; // 5 seconds!!
             }
             else if (PythonRunner.OperatingSystem.IsLinux())
             {
                 runner1.Timeout = 10000;
                 runner2.Timeout = 20000;
-                runner3.Timeout = 4000;
+                runner3.Timeout = 5000;
             }
 
-            // here the same script will be called - but with different arguments
+            // In this example the same script will be called with different arguments
             string script = @"./Python/ExampleScript.py";
 
             // confirm and setup string arrays with script arguments
@@ -62,25 +65,13 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
 
             string[] script2args = { args[2], args[3], @"test 2 with spaces", @"{""json2a"":""value2a"", ""json2b"":""value2b""}" };
 
-            // this one will cause the Timeout to expire for this runner
-            string[] script3args = { "Third Script", args[3], @"test 3 with spaces", @"{""json3a"":""value3a"", ""json3b"":""value3b""}" };
+            // this one will cause the runner3.Timeout (of 4 seconds) to expire before completion
+            string[] script3args = { "Third Script", "10", @"test 3 with spaces", @"{""json3a"":""value3a"", ""json3b"":""value3b""}" };
 
-            // starts scripts immediately - asynchronously
-            // cancellation by token does not currently propagate to tasks once started
-            // but would prevent tasks starting if token is already in cancelled state
-            // when tasks are created
-            var cts = new CancellationTokenSource();
+            var pythonScriptTasks = new List<Task<string>>() { runner1.ExecuteAsync(cts.Token, script, script1args) };
 
-            var pythonScriptTasks = new List<Task<string>>() { runner1.ExecuteAsync(script, cts.Token, script1args) };
-
-            pythonScriptTasks.Add(runner2.ExecuteAsync(script, cts.Token, script2args));
-            pythonScriptTasks.Add(runner3.ExecuteAsync(script, cts.Token, script3args));
-
-            // If using same runner again BOTH tasks will excute on seperate process
-            // BUT they will overwrite the output builders so DO NOT DO THIS!
-            // Do not excute a script on a runner while it is still running, if the output
-            // is required.
-            ////pythonScriptTasks.Add(runner2.ExecuteAsync(script, cts.Token, script2args));
+            pythonScriptTasks.Add(runner2.ExecuteAsync(cts.Token, script, script2args));
+            pythonScriptTasks.Add(runner3.ExecuteAsync(cts.Token, script, script3args));
 
             int count = 0;
 

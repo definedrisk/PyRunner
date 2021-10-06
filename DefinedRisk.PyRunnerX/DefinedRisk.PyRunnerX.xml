@@ -10,6 +10,12 @@
             as well as image output (work in progress), both synchronously and asynchronously.
             </summary>
         </member>
+        <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.Interpreter">
+            <summary>
+            Gets the full path to the underlying Python launcher or interpreter (eg. 'py.exe' or 'python3')
+            for use by this instance (set during construction and cannot be changed).
+            </summary>
+        </member>
         <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.LauncherArgs">
             <summary>
             Gets or sets the Python launcher args for use by this instance. See 'py --help'
@@ -25,6 +31,39 @@
         <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.Timeout">
             <summary>
             Gets or Sets the timeout for the underlying process in msec.
+            </summary>
+        </member>
+        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.CreateVirtualEnvAsync(System.Threading.CancellationToken,System.String)">
+            <summary>
+            Use the exisiting interpreter (launcher) to create a virtual environment in the base-directory if
+            it does not already exist. Then return a new <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> with interpreter setup
+            to use this virtual environment.
+            Note: on Debian/Ubuntu systems, you need to install the python3-venv package before this can
+            be used (sudo apt install python3.8-venv). On Windows 10 use the default installer provided
+            from python.org to ensure the venv module is available for use by this function.
+            </summary>
+            <seealso aref="https://docs.python.org/3/tutorial/venv.html"/>
+            <param name="ct">CancellationToken.</param>
+            <param name="requirements">Optional path to <c>requirements.txt</c> file.</param>
+            <returns>A python runner with interpreter setup to use the virtual environment.</returns>
+        </member>
+        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.GetEnvironmentDirectory">
+            <summary>
+            Gets the directory of the interpreter.
+            </summary>
+            <returns>Directory name.</returns>
+        </member>
+        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.InstallRequirementsAsync(System.Threading.CancellationToken,System.String)">
+            <summary>
+            Install requirements.txt into this environment.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <param name="requirements">Path to requirements.txt.</param>
+            <returns><see cref="T:System.Threading.Tasks.Task"/>.</returns>
+        </member>
+        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.DeleteEnvironment">
+            <summary>
+            Delete the virtual environment if it exists.
             </summary>
         </member>
         <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.Execute(System.String,System.Object[])">
@@ -56,12 +95,12 @@
             including the following statement: <c>warnings.simplefilter("ignore")</c>.
             </remarks>
         </member>
-        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.ExecuteAsync(System.String,System.Threading.CancellationToken,System.Object[])">
+        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.ExecuteAsync(System.Threading.CancellationToken,System.String,System.Object[])">
             <summary>
             Runs the <see cref="M:DefinedRisk.PyRunnerX.IPyRunnerX.Execute(System.String,System.Object[])"/> method asynchronously using a <see cref="T:System.Threading.CancellationToken"/>.
             </summary>
-            <param name="script">Full path to script file.</param>
             <param name="ct">Task cancellation token.</param>
+            <param name="script">Full path to script file.</param>
             <param name="scriptArguments">Arguments to pass to script.</param>
             <exception cref="T:System.ArgumentNullException">
             Argument <paramref name="script"/> is null.
@@ -145,19 +184,6 @@
              including the following statement: <c>warnings.simplefilter("ignore")</c>.
              </para>
              </remarks>
-        </member>
-        <member name="M:DefinedRisk.PyRunnerX.IPyRunnerX.CreateVirtualEnv(System.String)">
-            <summary>
-            Use the exisiting interpreter (launcher) to create a virtual environment in the base-directory if
-            it does not already exist. Then return a new <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> with interpreter setup
-            to use this virtual environment.
-            Note: on Debian/Ubuntu systems, you need to install the python3-venv package before this can
-            be used (sudo apt install python3.8-venv). On Windows 10 use the default installer provided
-            from python.org to ensure the venv module is available for use by this function.
-            </summary>
-            <seealso aref="https://docs.python.org/3/tutorial/venv.html"/>
-            <param name="requirements">Optional path to <c>requirements.txt</c> file.</param>
-            <returns>A python runner with interpreter setup to use the virtual environment.</returns>
         </member>
         <member name="T:DefinedRisk.PyRunnerX.PythonBase64ImageConverter">
             <summary>
@@ -255,11 +281,18 @@
             </summary>
             <seealso cref="T:DefinedRisk.PyRunnerX.PyRunnerExitedEventArgs"/>
         </member>
-        <member name="P:DefinedRisk.PyRunnerX.PythonRunner.Interpreter">
+        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.GetVirtualEnvironment">
             <summary>
-            Gets the full path to the underlying Python launcher or interpreter (eg. 'py.exe' or 'python3')
-            for use by this instance (set during construction and cannot be changed).
+            Get a PythonRunner with launcher set to virtual environment.
             </summary>
+            <returns>PythonRunner with launcher set to virtual environment or NULL if
+            environment does not exist.</returns>
+        </member>
+        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.GetSystemEnvironment">
+            <summary>
+            Get a PythonRunner with launcher set to global default environment.
+            </summary>
+            <returns>PythonRunner with launcher set to default system launcher (interpreter).</returns>
         </member>
         <member name="T:DefinedRisk.PyRunnerX.PythonRunner.OperatingSystem">
             <summary>

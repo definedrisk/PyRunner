@@ -28,6 +28,10 @@ namespace DefinedRisk.PyRunnerX
     /// <seealso cref="Process"/>
     public sealed class PythonRunner : IPyRunnerX
     {
+        private const int DEFAULTTIMEOUT = 60000;
+
+        private const int SETUPTIMEOUT = 120000;
+
         // collects output from process std_output during latest run
         private StringBuilder _outputBuilder;
 
@@ -49,7 +53,7 @@ namespace DefinedRisk.PyRunnerX
         /// </exception>
         /// <seealso cref="Timeout"/>
         public PythonRunner(
-            int timeout = 60000)
+            int timeout = DEFAULTTIMEOUT)
         {
             if (timeout < 0)
             {
@@ -85,7 +89,7 @@ namespace DefinedRisk.PyRunnerX
         public PythonRunner(
             string interpreter,
             string[] interpreterArgs = null,
-            int timeout = 60000)
+            int timeout = DEFAULTTIMEOUT)
         {
             if (timeout < 0)
             {
@@ -131,7 +135,7 @@ namespace DefinedRisk.PyRunnerX
             string[] launcherArgs,
             string[] interpreterArgs = null,
             string launcher = null,
-            int timeout = 60000)
+            int timeout = DEFAULTTIMEOUT)
         {
             if (timeout < 0)
             {
@@ -171,10 +175,6 @@ namespace DefinedRisk.PyRunnerX
         /// <seealso cref="PyRunnerExitedEventArgs"/>
         public event EventHandler<PyRunnerExitedEventArgs> Exited;
 
-        /// <summary>
-        /// Gets the full path to the underlying Python launcher or interpreter (eg. 'py.exe' or 'python3')
-        /// for use by this instance (set during construction and cannot be changed).
-        /// </summary>
         public string Interpreter { get; }
 
         public string[] LauncherArgs { get; set; } = new string[0];
@@ -203,6 +203,26 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
+        // Gets the path for the virtual environment to be assoicated with the app
+        private static string GetVirtualLauncher
+        {
+            get
+            {
+                if (OperatingSystem.IsLinux())
+                {
+                    return Path.Combine(EnvPath, "bin", "python3");
+                }
+                else if (OperatingSystem.IsWindows())
+                {
+                    return Path.Combine(EnvPath, "Scripts", "python.exe");
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
+
         // Gets the virtual environment folder i.e. <c>./base-directory/.venv</c>.
         private static string EnvPath
         {
@@ -210,6 +230,77 @@ namespace DefinedRisk.PyRunnerX
             {
                 return Path.Combine(AppContext.BaseDirectory, @".venv");
             }
+        }
+
+        /// <summary>
+        /// Get a PythonRunner with launcher set to virtual environment.
+        /// </summary>
+        /// <returns>PythonRunner with launcher set to virtual environment or NULL if
+        /// environment does not exist.</returns>
+        public static PythonRunner GetVirtualEnvironment()
+        {
+            PythonRunner runner = null;
+
+            if (File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
+            {
+                runner = new PythonRunner(GetVirtualLauncher);
+            }
+
+            return runner;
+        }
+
+        /// <summary>
+        /// Get a PythonRunner with launcher set to global default environment.
+        /// </summary>
+        /// <returns>PythonRunner with launcher set to default system launcher (interpreter).</returns>
+        public static PythonRunner GetSystemEnvironment()
+        {
+            return new PythonRunner(GetOSLauncher);
+        }
+
+        public string GetEnvironmentDirectory()
+        {
+            return new FileInfo(Interpreter).Directory.Parent.FullName;
+        }
+
+        public async Task<PythonRunner> CreateVirtualEnvAsync(CancellationToken ct, string requirements = null)
+        {
+            // Check for existance of venv and create if not
+            if (!File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
+            {
+                LauncherArgs = null;
+                InterpreterArgs = new string[] { "-m", "venv", EnvPath };
+
+                Timeout = SETUPTIMEOUT;
+                await RunAsync(ct).ConfigureAwait(false);
+                Timeout = DEFAULTTIMEOUT;
+            }
+
+            PythonRunner runner = GetVirtualEnvironment();
+
+            if (requirements != null)
+            {
+                await runner.InstallRequirementsAsync(ct, requirements);
+            }
+
+            return runner;
+        }
+
+        public async Task InstallRequirementsAsync(CancellationToken ct, string requirements)
+        {
+            Timeout = SETUPTIMEOUT;
+            LauncherArgs = null;
+
+            // ensure no exception due to out-of-date pip
+            InterpreterArgs = new string[] { "-m", "pip", "install", "--upgrade", "pip" };
+            await RunAsync(ct).ConfigureAwait(false);
+
+            // install requirments.txt
+            InterpreterArgs = new string[] { "-m", "pip", "install", "-r", requirements };
+            await RunAsync(ct).ConfigureAwait(false);
+
+            Timeout = DEFAULTTIMEOUT;
+            InterpreterArgs = null;
         }
 
         public string Execute(string script, params object[] scriptArguments)
@@ -221,10 +312,10 @@ namespace DefinedRisk.PyRunnerX
                 : _outputBuilder.ToString().Trim();
         }
 
-        public Task<string> ExecuteAsync(string script, CancellationToken ct, params object[] scriptArguments)
+        public async Task<string> ExecuteAsync(CancellationToken ct, string script, params object[] scriptArguments)
         {
             // cancellation token will only prevent execution if not already started
-            return Task.Run<string>(() => Execute(script, scriptArguments), ct);
+            return await Task.Run<string>(() => Execute(script, scriptArguments), ct).ConfigureAwait(false);
         }
 
         public string Run()
@@ -237,9 +328,10 @@ namespace DefinedRisk.PyRunnerX
                  : _outputBuilder.ToString().Trim();
         }
 
-        public Task<string> RunAsync(CancellationToken ct)
+        public async Task<string> RunAsync(CancellationToken ct)
         {
-            return Task.Run<string>(() => Run(), ct);
+            // cancellation token will only prevent execution if not already started
+            return await Task.Run<string>(() => Run(), ct).ConfigureAwait(false);
         }
 
         public Image GetImage(string script, params object[] scriptArguments)
@@ -266,85 +358,12 @@ namespace DefinedRisk.PyRunnerX
             }
         }
 
-        public PythonRunner CreateVirtualEnv(string requirements = null)
+        public void DeleteEnvironment()
         {
-            // Check for existance of venv and create if not
-            if (!File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
+            if (File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
             {
-                Debug.WriteLine("Creating virtual environment:");
-                Debug.WriteLine(EnvPath);
-
-                // create a new virtual environment using exisiting interpreter
-                var startInfo = new ProcessStartInfo(Interpreter)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                };
-
-                var args = new string[] { "-m", "venv", EnvPath };
-                foreach (var arg in args)
-                {
-                    startInfo.ArgumentList.Add(arg);
-                }
-
-                InternalRun(startInfo);
+                Directory.Delete(EnvPath, true);
             }
-
-            // install requirements.txt
-            if (requirements != null)
-            {
-                Debug.WriteLine("Installing Requirements:");
-                Debug.WriteLine(requirements);
-
-                string program;
-
-                if (OperatingSystem.IsLinux())
-                {
-                    program = Path.Combine(EnvPath, "bin", "pip");
-                }
-                else if (OperatingSystem.IsWindows())
-                {
-                    program = Path.Combine(EnvPath, "Scripts", "pip");
-                }
-                else
-                {
-                    program = string.Empty;
-                }
-
-                var startInfo = new ProcessStartInfo(program)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                };
-                var args = new string[] { "install", "-r", requirements };
-                foreach (var arg in args)
-                {
-                    startInfo.ArgumentList.Add(arg);
-                }
-
-                InternalRun(startInfo);
-            }
-
-            PythonRunner runner;
-
-            if (OperatingSystem.IsLinux())
-            {
-                runner = new PythonRunner(Path.Combine(EnvPath, "bin", "python3"));
-            }
-            else if (OperatingSystem.IsWindows())
-            {
-                runner = new PythonRunner(Path.Combine(EnvPath, "Scripts", "python.exe"));
-            }
-            else
-            {
-                runner = null;
-            }
-
-            return runner;
         }
 
         // Append python script and script arguments then run the Process component.
@@ -436,20 +455,17 @@ namespace DefinedRisk.PyRunnerX
                 RedirectStandardError = true,
             };
 
-            // Add launcher args first if launcher is being used
-            if (Interpreter.EndsWith("py.exe"))
+            // Add launcher args first if any.
+            if (LauncherArgs != null)
             {
-                if (LauncherArgs.Any())
+                foreach (var arg in LauncherArgs)
                 {
-                    foreach (var arg in LauncherArgs)
-                    {
-                        startInfo.ArgumentList.Add(arg);
-                    }
+                    startInfo.ArgumentList.Add(arg);
                 }
             }
 
             // Add interpreter args.
-            if (InterpreterArgs.Any())
+            if (InterpreterArgs != null)
             {
                 if (InterpreterArgs.Any())
                 {
