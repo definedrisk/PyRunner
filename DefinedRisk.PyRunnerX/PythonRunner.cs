@@ -43,7 +43,7 @@ namespace DefinedRisk.PyRunnerX
         /// environments using default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
         /// evaluated from OS (windows or linux) at runtime.
         /// </summary>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+        /// <param name="timeout">Optional script timeout in msec. Defaults to <see cref="DEFAULTTIMEOUT"/>.</param>
         /// <exception cref="PythonRunnerException">
         /// Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
         /// launcher (interpreter) directly.
@@ -76,7 +76,7 @@ namespace DefinedRisk.PyRunnerX
         /// </summary>
         /// <param name="interpreter">Path to the Python interpreter (launcher).</param>
         /// <param name="interpreterArgs">Optional interpreter specific arguments.</param>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+        /// <param name="timeout">Optional script timeout in msec. Defaults to <see cref="DEFAULTTIMEOUT"/>.</param>
         /// <exception cref="PythonRunnerException">
         /// Argument <paramref name="interpreter"/> is an invalid path.
         /// </exception>
@@ -120,7 +120,7 @@ namespace DefinedRisk.PyRunnerX
         /// <param name="launcher">Optional full path to the Python launcher (interpreter). Othwerwise
         /// uses the default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
         /// evaluated from OS (windows or linux) at runtime.</param>
-        /// <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+        /// <param name="timeout">Optional script timeout in msec. Defaults to <see cref="DEFAULTTIMEOUT"/>.</param>
         /// <exception cref="PythonRunnerException">
         /// Launcher (interpreter) <paramref name="launcher"/> is an invalid path.
         /// </exception>
@@ -268,11 +268,12 @@ namespace DefinedRisk.PyRunnerX
             // Check for existance of venv and create if not
             if (!File.Exists(Path.Combine(EnvPath, "pyvenv.cfg")))
             {
-                LauncherArgs = null;
-                InterpreterArgs = new string[] { "-m", "venv", EnvPath };
-
                 Timeout = SETUPTIMEOUT;
+                LauncherArgs = null;
+
+                InterpreterArgs = new string[] { "-m", "venv", EnvPath };
                 await RunAsync(ct).ConfigureAwait(false);
+
                 Timeout = DEFAULTTIMEOUT;
             }
 
@@ -280,7 +281,7 @@ namespace DefinedRisk.PyRunnerX
 
             if (requirements != null)
             {
-                await runner.InstallRequirementsAsync(ct, requirements);
+                await runner.InstallRequirementsAsync(ct, requirements).ConfigureAwait(false);
             }
 
             return runner;
@@ -295,7 +296,7 @@ namespace DefinedRisk.PyRunnerX
             InterpreterArgs = new string[] { "-m", "pip", "install", "--upgrade", "pip" };
             await RunAsync(ct).ConfigureAwait(false);
 
-            // install requirments.txt
+            // install requirements.txt
             InterpreterArgs = new string[] { "-m", "pip", "install", "-r", requirements };
             await RunAsync(ct).ConfigureAwait(false);
 

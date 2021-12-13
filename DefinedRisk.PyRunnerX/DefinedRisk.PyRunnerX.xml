@@ -214,7 +214,7 @@
             environments using default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
             evaluated from OS (windows or linux) at runtime.
             </summary>
-            <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+            <param name="timeout">Optional script timeout in msec. Defaults to <see cref="F:DefinedRisk.PyRunnerX.PythonRunner.DEFAULTTIMEOUT"/>.</param>
             <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             Default launcher (interpreter) does not exist (invalid path). Use alternative constructor and specify
             launcher (interpreter) directly.
@@ -231,7 +231,7 @@
             </summary>
             <param name="interpreter">Path to the Python interpreter (launcher).</param>
             <param name="interpreterArgs">Optional interpreter specific arguments.</param>
-            <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+            <param name="timeout">Optional script timeout in msec. Defaults to <see cref="F:DefinedRisk.PyRunnerX.PythonRunner.DEFAULTTIMEOUT"/>.</param>
             <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             Argument <paramref name="interpreter"/> is an invalid path.
             </exception>
@@ -257,7 +257,7 @@
             <param name="launcher">Optional full path to the Python launcher (interpreter). Othwerwise
             uses the default global python installation (either "c:\windows\py.exe" or "/usr/bin/python3"
             evaluated from OS (windows or linux) at runtime.</param>
-            <param name="timeout">Optional script timeout in msec. Defaults to 60000 (60 sec).</param>
+            <param name="timeout">Optional script timeout in msec. Defaults to <see cref="F:DefinedRisk.PyRunnerX.PythonRunner.DEFAULTTIMEOUT"/>.</param>
             <exception cref="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             Launcher (interpreter) <paramref name="launcher"/> is an invalid path.
             </exception>

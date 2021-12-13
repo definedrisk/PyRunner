@@ -10,15 +10,15 @@ namespace Microsoft.Extensions.DependencyInjection
     using System.Text;
 
     using DefinedRisk.PyRunnerX;
-    using DefinedRisk.PyRunnerX.Worker;
+    using DefinedRisk.PyRunnerX.ExampleUsage.Worker;
 
     public static class DependenciesRegistrations
     {
-        public static IServiceCollection AddPyVEnvSetup(this IServiceCollection services)
+        public static IServiceCollection AddPythonRunner(this IServiceCollection services)
         {
             return services
                 .AddScoped<IPyRunnerX, PythonRunner>()
-                .AddHostedService<PyVEnvSetupHostedService>();
+                .AddHostedService<PyRunnerHostedService>();
         }
     }
 }
