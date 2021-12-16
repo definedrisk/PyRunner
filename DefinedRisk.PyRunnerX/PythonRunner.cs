@@ -377,7 +377,7 @@ namespace DefinedRisk.PyRunnerX
 
             if (!File.Exists(script))
             {
-                throw new PythonRunnerException("Script file not found: {script}", new FileNotFoundException(script));
+                throw new PythonRunnerException($"Script file not found: {script}", new FileNotFoundException(script));
             }
 
             ProcessStartInfo startInfo = CreateStartInfo();
