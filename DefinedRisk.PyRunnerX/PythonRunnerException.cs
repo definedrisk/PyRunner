@@ -10,8 +10,7 @@ namespace DefinedRisk.PyRunnerX
     using System.Text;
 
     /// <summary>
-    /// The <see cref="Exception"/> type that is thrown by <see cref="PythonRunner"/> instances
-    /// when an error occured during execution of a script.
+    /// The <see cref="Exception"/> type that is thrown by <see cref="PythonRunner"/> instances.
     /// </summary>
     public class PythonRunnerException : Exception
     {

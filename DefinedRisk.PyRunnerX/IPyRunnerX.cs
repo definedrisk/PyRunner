@@ -27,7 +27,7 @@ namespace DefinedRisk.PyRunnerX
 
         /// <summary>
         /// Gets or sets the Python launcher args for use by this instance. See 'py --help'
-        /// for available launcher args. Not strictly necessary for Ubuntu linux.
+        /// for available launcher args. Not necessary for Ubuntu linux.
         /// </summary>
         public string[] LauncherArgs { get; set; }
 
@@ -36,6 +36,12 @@ namespace DefinedRisk.PyRunnerX
         /// for available interpreter args.
         /// </summary>
         public string[] InterpreterArgs { get; set; }
+
+        /// <summary>
+        /// Gets or Sets the optional working directory used by the process. This is often necessary
+        /// when subscripts and modules are being called.
+        /// </summary>
+        public string WorkingDirectory { get; set; }
 
         /// <summary>
         /// Gets or Sets the timeout for the underlying process in msec.

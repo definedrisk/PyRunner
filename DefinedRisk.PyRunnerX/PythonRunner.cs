@@ -181,6 +181,8 @@ namespace DefinedRisk.PyRunnerX
 
         public string[] InterpreterArgs { get; set; } = new string[0];
 
+        public string WorkingDirectory { get; set; }
+
         public int Timeout { get; set; }
 
         // Gets the default operating system launcher (interpreter) full path.
@@ -252,10 +254,18 @@ namespace DefinedRisk.PyRunnerX
         /// <summary>
         /// Get a PythonRunner with launcher set to global default environment.
         /// </summary>
-        /// <returns>PythonRunner with launcher set to default system launcher (interpreter).</returns>
+        /// <returns>PythonRunner with launcher set to default system launcher (interpreter)
+        /// or NULL if not found.</returns>
         public static PythonRunner GetSystemEnvironment()
         {
-            return new PythonRunner(GetOSLauncher);
+            PythonRunner runner = null;
+
+            if (File.Exists(GetOSLauncher))
+            {
+                runner = new PythonRunner(GetOSLauncher);
+            }
+
+            return runner;
         }
 
         public string GetEnvironmentDirectory()
@@ -309,7 +319,7 @@ namespace DefinedRisk.PyRunnerX
             InternalExecute(script, scriptArguments);
 
             return !string.IsNullOrWhiteSpace(_errorBuilder.ToString())
-                ? throw new PythonRunnerException(_errorBuilder.ToString())
+                ? throw new PythonScriptException(_errorBuilder.ToString())
                 : _outputBuilder.ToString().Trim();
         }
 
@@ -454,6 +464,7 @@ namespace DefinedRisk.PyRunnerX
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                WorkingDirectory = WorkingDirectory ?? string.Empty
             };
 
             // Add launcher args first if any.

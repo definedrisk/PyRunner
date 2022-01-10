@@ -19,13 +19,19 @@
         <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.LauncherArgs">
             <summary>
             Gets or sets the Python launcher args for use by this instance. See 'py --help'
-            for available launcher args. Not strictly necessary for Ubuntu linux.
+            for available launcher args. Not necessary for Ubuntu linux.
             </summary>
         </member>
         <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.InterpreterArgs">
             <summary>
             Gets or sets the Python interpreter args for use by this instance. See 'python3 --help'
             for available interpreter args.
+            </summary>
+        </member>
+        <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.WorkingDirectory">
+            <summary>
+            Gets or Sets the optional working directory used by the process. This is often necessary
+            when subscripts and modules are being called.
             </summary>
         </member>
         <member name="P:DefinedRisk.PyRunnerX.IPyRunnerX.Timeout">
@@ -292,7 +298,8 @@
             <summary>
             Get a PythonRunner with launcher set to global default environment.
             </summary>
-            <returns>PythonRunner with launcher set to default system launcher (interpreter).</returns>
+            <returns>PythonRunner with launcher set to default system launcher (interpreter)
+            or NULL if not found.</returns>
         </member>
         <member name="T:DefinedRisk.PyRunnerX.PythonRunner.OperatingSystem">
             <summary>
@@ -301,8 +308,13 @@
         </member>
         <member name="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             <summary>
+            The <see cref="T:System.Exception"/> type that is thrown by <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> instances.
+            </summary>
+        </member>
+        <member name="T:DefinedRisk.PyRunnerX.PythonScriptException">
+            <summary>
             The <see cref="T:System.Exception"/> type that is thrown by <see cref="T:DefinedRisk.PyRunnerX.PythonRunner"/> instances
-            when an error occured during execution of a script.
+            when ProcessErrorData is received ie. errors occuring during exceution of the python script.
             </summary>
         </member>
     </members>
