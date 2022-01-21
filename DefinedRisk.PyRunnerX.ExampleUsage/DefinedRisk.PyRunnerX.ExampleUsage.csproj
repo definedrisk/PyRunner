@@ -28,9 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Python\ExampleScript.py">
+    <None Include="..\PythonExample\ExampleScript.py" Link="Python\ExampleScript.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Python\requirements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -160,6 +160,7 @@ namespace DefinedRisk.PyRunnerX
             Interpreter = copy.Interpreter;
             InterpreterArgs = copy.InterpreterArgs;
             LauncherArgs = copy.LauncherArgs;
+            WorkingDirectory = copy.WorkingDirectory;
             Timeout = copy.Timeout;
         }
 
@@ -190,13 +191,27 @@ namespace DefinedRisk.PyRunnerX
         {
             get
             {
-                if (OperatingSystem.IsWindows())
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    return @"c:\windows\py.exe";
+                    try
+                    {
+                        return FindExePath("py.exe");
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        return string.Empty;
+                    }
                 }
-                else if (OperatingSystem.IsLinux())
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    return @"/usr/bin/python3";
+                    try
+                    {
+                        return FindExePath("python3.exe");
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        return string.Empty;
+                    }
                 }
                 else
                 {
@@ -210,11 +225,11 @@ namespace DefinedRisk.PyRunnerX
         {
             get
             {
-                if (OperatingSystem.IsLinux())
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     return Path.Combine(EnvPath, "bin", "python3");
                 }
-                else if (OperatingSystem.IsWindows())
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     return Path.Combine(EnvPath, "Scripts", "python.exe");
                 }
@@ -266,6 +281,48 @@ namespace DefinedRisk.PyRunnerX
             }
 
             return runner;
+        }
+
+        /// <summary>
+        /// Expands environment variables and locates the exe with either fully qualifed or relative directory.
+        /// If unqualified then searches the the evironment's path after working directory.
+        /// </summary>
+        /// <param name="exe">The name of the executable file.</param>
+        /// <param name="recursive">Optional recursive seach sub-folders (default is false).</param>
+        /// <returns>The fully-qualified path to the file.</returns>
+        /// <exception cref="System.IO.FileNotFoundException">Raised when the exe was not found.</exception>
+        public static string FindExePath(string exe, bool recursive = false)
+        {
+            exe = Environment.ExpandEnvironmentVariables(exe);
+
+            var directoryName = Path.GetDirectoryName(exe) ?? string.Empty;
+            if (directoryName == string.Empty)
+            {
+                directoryName = Directory.GetCurrentDirectory();
+            }
+
+            var result = Directory.EnumerateFiles(
+                directoryName,
+                Path.GetFileName(exe),
+                new EnumerationOptions { RecurseSubdirectories = recursive });
+
+            if (result.FirstOrDefault() != null)
+            {
+                return result.FirstOrDefault();
+            }
+            else
+            {
+                foreach (string test in (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(';'))
+                {
+                    string path = test.Trim();
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path = Path.Combine(path, exe)))
+                    {
+                        return Path.GetFullPath(path);
+                    }
+                }
+            }
+
+            throw new FileNotFoundException(new FileNotFoundException().Message, exe);
         }
 
         public string GetEnvironmentDirectory()
@@ -385,7 +442,7 @@ namespace DefinedRisk.PyRunnerX
                 throw new PythonRunnerException("Script file is required.", new ArgumentNullException(nameof(script)));
             }
 
-            if (!File.Exists(script))
+            if (!File.Exists(Path.Combine(WorkingDirectory, script)))
             {
                 throw new PythonRunnerException($"Script file not found: {script}", new FileNotFoundException(script));
             }
@@ -512,20 +569,5 @@ namespace DefinedRisk.PyRunnerX
         // Raise the Exited event (see above).
         private void OnExited(int exitCode, DateTime exitTime) =>
             Exited?.Invoke(this, new PyRunnerExitedEventArgs(exitCode, exitTime));
-
-        /// <summary>
-        ///  Simple wrapper can be used to identify OS. Functionality may be increased in future.
-        /// </summary>
-        public static class OperatingSystem
-        {
-            public static bool IsWindows() =>
-                RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
-            ////public static bool IsMacOS() =>
-            ////    RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-
-            public static bool IsLinux() =>
-                RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-        }
     }
 }

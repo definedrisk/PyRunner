@@ -301,10 +301,15 @@
             <returns>PythonRunner with launcher set to default system launcher (interpreter)
             or NULL if not found.</returns>
         </member>
-        <member name="T:DefinedRisk.PyRunnerX.PythonRunner.OperatingSystem">
+        <member name="M:DefinedRisk.PyRunnerX.PythonRunner.FindExePath(System.String,System.Boolean)">
             <summary>
-             Simple wrapper can be used to identify OS. Functionality may be increased in future.
+            Expands environment variables and locates the exe with either fully qualifed or relative directory.
+            If unqualified then searches the the evironment's path after working directory.
             </summary>
+            <param name="exe">The name of the executable file.</param>
+            <param name="recursive">Optional recursive seach sub-folders (default is false).</param>
+            <returns>The fully-qualified path to the file.</returns>
+            <exception cref="T:System.IO.FileNotFoundException">Raised when the exe was not found.</exception>
         </member>
         <member name="T:DefinedRisk.PyRunnerX.PythonRunnerException">
             <summary>

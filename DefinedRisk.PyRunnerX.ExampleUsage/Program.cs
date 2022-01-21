@@ -9,6 +9,7 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -16,57 +17,58 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
   {
         public static void Main(string[] args)
         {
-            // starts scripts immediately - asynchronously
-            // cancellation by token does not currently propagate to tasks once started
+            // Cancellation by token does not currently propagate to tasks once started
             // but would prevent tasks starting if token is already in cancelled state
             // when tasks are created
             var cts = new CancellationTokenSource();
 
-            // show OS type
-            Console.WriteLine("IsWindows(): " + PythonRunner.OperatingSystem.IsWindows());
-            Console.WriteLine("IsLinux(): " + PythonRunner.OperatingSystem.IsLinux());
+            // Show OS type
+            Console.WriteLine($"OSDescription: {RuntimeInformation.OSDescription}");
+            Console.WriteLine($"RuntimeIdentifier: {RuntimeInformation.RuntimeIdentifier}");
 
-            // create a default (global) python runner
+            // Create a default python runner will use global environment
             PythonRunner runnerGlobal = new PythonRunner();
 
-            // use it to create a virtual environment in local directory (or just return if one already exists)
-            PythonRunner runnerVirtual = runnerGlobal.CreateVirtualEnvAsync(cts.Token, Path.Combine(AppContext.BaseDirectory, "Python", "requirements.txt")).Result;
+            // Use to create a virtual environment in local directory (or just return if already exists)#
+            // Blocking call with .Result (use await)
+            PythonRunner runnerVirtual = runnerGlobal
+                .CreateVirtualEnvAsync(cts.Token, Path.Combine(AppContext.BaseDirectory, "Python", "requirements.txt"))
+                .Result;
 
-            // these copies of runner will use this same virtual environment
+            runnerVirtual.WorkingDirectory = Path.Combine(AppContext.BaseDirectory, "Python");
+
+            // These copies of runner will use this same virtual environment
             var runner1 = new PythonRunner(runnerVirtual);
             var runner2 = new PythonRunner(runnerVirtual);
             var runner3 = new PythonRunner(runnerVirtual);
 
-            // setup optional launcher arguments and timeout
-            if (PythonRunner.OperatingSystem.IsWindows())
+            // Setup optional launcher arguments and timeout dependent upon OS
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // set launcher-args
+                ////runner1.LauncherArgs = new string[] { "--arg1", "--arg2", "arg3", "etc" };
                 runner1.Timeout = 10000; // 10 seconds
-
                 runner2.Timeout = 20000; // 20 seconds
-
-                runner3.Timeout = 5000; // 5 seconds!!
+                runner3.Timeout = 30000; // 30 seconds
             }
-            else if (PythonRunner.OperatingSystem.IsLinux())
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 runner1.Timeout = 10000;
                 runner2.Timeout = 20000;
-                runner3.Timeout = 5000;
+                runner3.Timeout = 30000;
             }
 
-            // In this example the same script will be called with different arguments
-            string script = @"./Python/ExampleScript.py";
+            // In this example the SAME script will be called with different arguments
+            // Note that this path is relative to Runner.WorkingDirectory if set or
+            // the working directory of the calling process if not.
+            string script = Path.Combine("ExampleScript.py");
 
-            // confirm and setup string arrays with script arguments
-            Console.WriteLine($"Program args 0 and 1: Title= \"{args[0]}\", Delay= \"{args[1]}\".");
-            Console.WriteLine($"Program args 2 and 3: Title= \"{args[2]}\", Delay= \"{args[3]}\".");
-
-            string[] script1args = { args[0], args[1], @"test 1 with spaces", @"{""json1a"":""value1a"", ""json1b"":""value1b""}" };
-
-            string[] script2args = { args[2], args[3], @"test 2 with spaces", @"{""json2a"":""value2a"", ""json2b"":""value2b""}" };
-
-            // this one will cause the runner3.Timeout (of 4 seconds) to expire before completion
-            string[] script3args = { "Third Script", "10", @"test 3 with spaces", @"{""json3a"":""value3a"", ""json3b"":""value3b""}" };
+            // Confirm and setup string arrays with script arguments
+            // \TODO Example with quoted and spaced strings from command line e.g. Json objects using:
+            // https://docs.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+            // https://docs.microsoft.com/en-us/previous-versions//17w5ykft(v=vs.85)?redirectedfrom=MSDN
+            string[] script1args = { args[0], args[1], args[2], args[3] };
+            string[] script2args = { "Title Two", "15.5", @"./scripts/script2", "Second \"quoted\" example" };
+            string[] script3args = { "Title Three", "25.5", @"./scripts/script3", "Third \"quoted\" example" };
 
             var pythonScriptTasks = new List<Task<string>>() { runner1.ExecuteAsync(cts.Token, script, script1args) };
 
@@ -75,13 +77,13 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
 
             int count = 0;
 
-            // wait for completion or timeout (check every second) - remove from list on completion
+            // Wait for completion or timeout (check every second) - remove from list on completion
             while (pythonScriptTasks.Any())
             {
-                // this task completes when any of the supplied tasks completes
+                // This task completes when any of the supplied tasks completes
                 var task = Task.WhenAny(pythonScriptTasks);
 
-                // do something else to replicate await task - otherwise this console app will complete!
+                // Blocking loop to do something else to replicate (use await)
                 while (!task.IsCompleted)
                 {
                     // output count in seconds on screen
@@ -89,10 +91,12 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
                     Thread.Sleep(1000);
                 }
 
-                // display output of script and remove from collection
+                // Display output of script and remove from collection
                 Console.WriteLine(task.Result.Result);
                 pythonScriptTasks.Remove(task.Result);
             }
+
+            runnerVirtual.DeleteEnvironment();
         }
     }
 }
