@@ -14,7 +14,7 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage.Worker
     using Microsoft.Extensions.Hosting;
 
     // Code to be run just before receiving requests should be placed in the StartAsync method.
-    // The StopAsync method can be ignored for this use case.
+    // The StopAsync method can be ignored for this use case or could be used to delete the environment.
     // Based on example https://andrewlock.net/running-async-tasks-on-app-startup-in-asp-net-core-3/
     public class PyRunnerHostedService : IHostedService
     {
@@ -39,15 +39,25 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage.Worker
                 }
                 catch (PythonRunnerException ex)
                 {
-                    // \TODO Implement something here instead
-                    throw new NotImplementedException("\\TODO Implement something here instead", ex);
+                    // \TODO Implement logging
+                    throw new NotImplementedException("\\TODO Implement logging", ex);
                 }
+
+                ////await ProcessJobsAsync(cancellationToken);
             }
         }
 
+        ////private async Task ProcessJobsAsync(CancellationToken ct)
+        ////{
+        ////    while (!ct.IsCancellationRequested)
+        ////    {
+        ////        // do something async here
+        ////    }
+        ////}
+
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _vRunner.DeleteEnvironment();
+            ////_vRunner.DeleteEnvironment();
             return Task.CompletedTask;
         }
     }

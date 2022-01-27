@@ -13,7 +13,7 @@
     <RootNamespace>PythonExample</RootNamespace>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>"Title One" 5.5 .\scripts\script1 "First \\\"quoted\\\" example"</CommandLineArguments>
+    <CommandLineArguments>"Example Script Arguments" 99.99 .\output\script1 "A \\\"quoted\\\" example string"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

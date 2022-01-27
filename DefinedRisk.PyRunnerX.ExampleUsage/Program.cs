@@ -17,6 +17,8 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
   {
         public static void Main(string[] args)
         {
+            // See also the ./Worker/PyRunnerHostedService.cs example
+
             // Cancellation by token does not currently propagate to tasks once started
             // but would prevent tasks starting if token is already in cancelled state
             // when tasks are created
@@ -37,12 +39,12 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
 
             runnerVirtual.WorkingDirectory = Path.Combine(AppContext.BaseDirectory, "Python");
 
-            // These copies of runner will use this same virtual environment
+            // These three seperate runners will all use this same virtual environment
             var runner1 = new PythonRunner(runnerVirtual);
             var runner2 = new PythonRunner(runnerVirtual);
             var runner3 = new PythonRunner(runnerVirtual);
 
-            // Setup optional launcher arguments and timeout dependent upon OS
+            // Setup optional launcher arguments and timeout dependent upon OS and runner as needed
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 ////runner1.LauncherArgs = new string[] { "--arg1", "--arg2", "arg3", "etc" };
@@ -63,30 +65,28 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
             string script = Path.Combine("ExampleScript.py");
 
             // Confirm and setup string arrays with script arguments
-            // \TODO Example with quoted and spaced strings from command line e.g. Json objects using:
             // https://docs.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
             // https://docs.microsoft.com/en-us/previous-versions//17w5ykft(v=vs.85)?redirectedfrom=MSDN
             string[] script1args = { args[0], args[1], args[2], args[3] };
-            string[] script2args = { "Title Two", "15.5", @"./scripts/script2", "Second \"quoted\" example" };
-            string[] script3args = { "Title Three", "25.5", @"./scripts/script3", "Third \"quoted\" example" };
+            string[] script2args = { "Title Two", "15.5", @"./output/script2", "Second \"quoted\" example" };
+            string[] script3args = { "Title Three", "25.5", @"./output/script3", "Third \"quoted\" example" };
 
             var pythonScriptTasks = new List<Task<string>>() { runner1.ExecuteAsync(cts.Token, script, script1args) };
-
             pythonScriptTasks.Add(runner2.ExecuteAsync(cts.Token, script, script2args));
             pythonScriptTasks.Add(runner3.ExecuteAsync(cts.Token, script, script3args));
 
             int count = 0;
 
-            // Wait for completion or timeout (check every second) - remove from list on completion
+            // Wait for completion or timeout - remove from list on completion
             while (pythonScriptTasks.Any())
             {
                 // This task completes when any of the supplied tasks completes
                 var task = Task.WhenAny(pythonScriptTasks);
 
-                // Blocking loop to do something else to replicate (use await)
+                // Blocking loop to do something else (use await)
                 while (!task.IsCompleted)
                 {
-                    // output count in seconds on screen
+                    // output count in seconds on screen then sleep for a second
                     Console.WriteLine(count++.ToString());
                     Thread.Sleep(1000);
                 }
@@ -96,6 +96,7 @@ namespace DefinedRisk.PyRunnerX.ExampleUsage
                 pythonScriptTasks.Remove(task.Result);
             }
 
+            // Delete the virtual environment when application finishes
             runnerVirtual.DeleteEnvironment();
         }
     }

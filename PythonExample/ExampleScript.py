@@ -1,13 +1,29 @@
+# An example python script that can be run manually to confirm operation of Python Environment
+# and use of debuuger in Visual Studio
+
+# This script is called using the PythonRunner in the ExampleUsage project
+
 import argparse
 import time
 import sys
 import os
 import uuid
 
+# disable warnings usually written to sys.stderr
+# https://docs.python.org/3/library/warnings.html
 if not sys.warnoptions:
     import warnings
     warnings.simplefilter("ignore")
 
+# # turn on text trap
+# import io
+# text_trap = io.StringIO()
+# sys.stdout = text_trap
+#
+# # turn off text trap
+# sys.stdout = sys.__stdout__
+
+# parse command line arguments
 parser = argparse.ArgumentParser(description="The Parser's Description")
 parser.add_argument('Title')
 parser.add_argument('Delay')
@@ -18,6 +34,10 @@ class CommandLineArgs:
     pass
 
 args = CommandLineArgs()
+
+# See the following Micorosft Windows notes when passing command line arguymnets using escaping for quotes and spaces
+# https://docs.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+# https://docs.microsoft.com/en-us/previous-versions//17w5ykft(v=vs.85)?redirectedfrom=MSDN
 
 args = parser.parse_args(namespace=CommandLineArgs)
 
