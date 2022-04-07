@@ -206,7 +206,7 @@ namespace DefinedRisk.PyRunnerX
                 {
                     try
                     {
-                        return FindExePath("python3.exe");
+                        return FindExePath("python3");
                     }
                     catch (FileNotFoundException)
                     {
