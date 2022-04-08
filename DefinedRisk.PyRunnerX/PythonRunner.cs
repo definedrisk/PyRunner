@@ -312,7 +312,7 @@ namespace DefinedRisk.PyRunnerX
             }
             else
             {
-                foreach (string test in (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(';'))
+                foreach (string test in (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator))
                 {
                     string path = test.Trim();
                     if (!string.IsNullOrEmpty(path) && File.Exists(path = Path.Combine(path, exe)))
