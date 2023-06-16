@@ -5,3 +5,5 @@
 See also: https://github.com/op07n/ThomasWellerPythonrunner
 
 This branch for NuGet netstandard2.1 package.
+
+See [PyRunnerX](./DefinedRisk.PyRunnerX/readme.md) and [PyRunnerX.ExampleUsage](./DefinedRisk.PyRunnerX.ExampleUsage/readme.md).
