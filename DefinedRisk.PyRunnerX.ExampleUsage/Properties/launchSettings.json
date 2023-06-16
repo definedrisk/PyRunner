@@ -2,7 +2,7 @@
   "profiles": {
     "DefinedRisk.PyRunnerX.ExampleUsage": {
       "commandName": "Project",
-      "commandLineArgs": "\"Title One\" 5.5 .\\scripts\\script1 \"First \\\"quoted\\\" example\""
+      "commandLineArgs": "\"Title One\" 5.5 .\\output\\script1 \"First \\\"quoted\\\" example\""
     }
   }
 }
